@@ -1,4 +1,5 @@
 streamlit
 folium
-pandas  # 
-numpy   # 
+streamlit_folium
+pandas  # 如果使用
+numpy   # 如果使用
