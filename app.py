@@ -9,11 +9,35 @@ import random
 
 
 
-# --- 中文显示配置 ---
-# 注意：在部署环境（如 Streamlit Cloud）中，SimHei 通常不存在。
-# 我们依赖 packages.txt 预安装的 'WenQuanYi Zen Hei' 字体。
-plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'Microsoft YaHei', 'sans-serif'] 
-plt.rcParams['axes.unicode_minus'] = False
+# --- 中文显示配置 (通过自定义字体文件修复) ---
+import matplotlib.font_manager as fm
+import os
+
+# 1. 定义字体文件路径 (相对路径指向 .fonts/simhei.ttf)
+# os.path.dirname(__file__) 确保了相对路径在部署环境中正确解析
+FONT_PATH = os.path.join(os.path.dirname(__file__), '.fonts', 'simsunb.ttf')
+
+if os.path.exists(FONT_PATH):
+    # 2. 强制清除 Matplotlib 缓存 (关键步骤!)
+    # 否则 Matplotlib 可能继续使用旧的字体列表
+    fm._load_fontmanager(try_read_cache=False) 
+    
+    # 3. 注册新字体
+    fm.fontManager.addfont(FONT_PATH) 
+    
+    # 4. 设置 Matplotlib 参数，使用新注册的字体
+    plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS'] 
+    plt.rcParams['axes.unicode_minus'] = False 
+else:
+    # 5. 备用配置 (以防万一字体路径在部署环境出错)
+    st.warning("⚠️ 警告：字体文件加载失败，中文显示可能异常。")
+    plt.rcParams['font.sans-serif'] = ['sans-serif'] 
+    plt.rcParams['axes.unicode_minus'] = False 
+
+# --- 物理常数与爆炸参数 ---
+R_TANK = 5      # ...
+# ...
+# 后续代码保持不变
 
 
 
