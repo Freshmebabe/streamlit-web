@@ -7,9 +7,15 @@ from mpl_toolkits.mplot3d import Axes3D
 import random 
 # 注意：art3d 将在 draw_complex_3d_simulation_plot 函数内部被正确引用
 
-# --- 中文显示配置 ---
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS'] 
-plt.rcParams['axes.unicode_minus'] = False 
+
+
+# 尝试使用 Streamlit Cloud 部署环境中可能预装的字体
+# 'SimHei' 通常缺失，但 'WenQuanYi Zen Hei' 或 'Noto Sans CJK' 家族可能存在。
+# 我们使用一个通用的中文字体列表来提高兼容性。
+plt.rcParams['font.sans-serif'] = ['SimSun', 'WenQuanYi Zen Hei', 'Microsoft YaHei', 'sans-serif'] 
+plt.rcParams['axes.unicode_minus'] = False
+
+
 
 # --- 物理常数与爆炸参数 ---
 R_TANK = 5      # 储罐半径 (m)
