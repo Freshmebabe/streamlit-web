@@ -1,5 +1,4 @@
 streamlit
-folium
-streamlit_folium
-pandas  # 如果使用
-numpy   # 如果使用
+pandas
+numpy
+matplotlib
