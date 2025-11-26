@@ -1,0 +1,4 @@
+# 安装字体配置工具
+fontconfig
+# 安装文泉驿正黑字体，这个字体在 Linux 环境下用于中文显示非常稳定
+fonts-wqy-zenhei

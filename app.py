@@ -9,10 +9,10 @@ import random
 
 
 
-# 尝试使用 Streamlit Cloud 部署环境中可能预装的字体
-# 'SimHei' 通常缺失，但 'WenQuanYi Zen Hei' 或 'Noto Sans CJK' 家族可能存在。
-# 我们使用一个通用的中文字体列表来提高兼容性。
-plt.rcParams['font.sans-serif'] = ['SimSun', 'WenQuanYi Zen Hei', 'Microsoft YaHei', 'sans-serif'] 
+# --- 中文显示配置 ---
+# 注意：在部署环境（如 Streamlit Cloud）中，SimHei 通常不存在。
+# 我们依赖 packages.txt 预安装的 'WenQuanYi Zen Hei' 字体。
+plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'Microsoft YaHei', 'sans-serif'] 
 plt.rcParams['axes.unicode_minus'] = False
 
 
