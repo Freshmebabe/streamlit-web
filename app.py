@@ -3,43 +3,61 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-# 【修复1】移除直接从 matplotlib 导入 art3d 的错误行
 import random 
+import os
+import matplotlib.font_manager as fm
+import shutil # 用于删除缓存
+
 # 注意：art3d 将在 draw_complex_3d_simulation_plot 函数内部被正确引用
 
+# --- 强制清理 Matplotlib 缓存 (部署环境必须!) ---
+# 此操作确保 Matplotlib 在每次启动时重新扫描字体，避免使用旧的字体列表。
+try:
+    cache_dir = fm.get_cachedir()
+    if os.path.exists(cache_dir):
+        shutil.rmtree(cache_dir)
+    # 重新加载字体管理器
+    fm._load_fontmanager(try_read_cache=False) 
+except Exception as e:
+    # 可以在本地调试时查看错误，但在部署时静默处理
+    pass
+# -----------------------------------
 
 
-# --- 中文显示配置 (通过自定义字体文件修复) ---
-import matplotlib.font_manager as fm
-import os
-
-# 1. 定义字体文件路径 (相对路径指向 .fonts/simhei.ttf)
-# os.path.dirname(__file__) 确保了相对路径在部署环境中正确解析
-FONT_PATH = os.path.join(os.path.dirname(__file__), '.fonts', 'simsunb.ttf')
+# --- 中文显示配置 (使用 simsunb.ttf 文件修复) ---
+# 1. 定义字体文件路径 (确认使用 simsunb.ttf)
+FONT_PATH = os.path.join(os.path.dirname(__file__), '.fonts', 'simsunb.ttf') 
+CUSTOM_FONT_NAME = None 
 
 if os.path.exists(FONT_PATH):
-    # 2. 强制清除 Matplotlib 缓存 (关键步骤!)
-    # 否则 Matplotlib 可能继续使用旧的字体列表
-    fm._load_fontmanager(try_read_cache=False) 
-    
-    # 3. 注册新字体
-    fm.fontManager.addfont(FONT_PATH) 
-    
-    # 4. 设置 Matplotlib 参数，使用新注册的字体
-    plt.rcParams['font.sans-serif'] = ['SimHei', 'Arial Unicode MS'] 
-    plt.rcParams['axes.unicode_minus'] = False 
+    try:
+        # 2. 注册新字体
+        fm.fontManager.addfont(FONT_PATH) 
+        
+        # 3. 动态获取字体文件内部定义的正式族名
+        prop = fm.FontProperties(fname=FONT_PATH)
+        CUSTOM_FONT_NAME = prop.get_name() 
+
+        # 4. 设置 Matplotlib 参数，使用动态获取的字体名称
+        if CUSTOM_FONT_NAME:
+            # 强制使用自定义字体，并设置 sans-serif 别名
+            plt.rcParams['font.sans-serif'] = [CUSTOM_FONT_NAME, 'Arial Unicode MS', 'sans-serif'] 
+            plt.rcParams['font.family'] = 'sans-serif' 
+            plt.rcParams['axes.unicode_minus'] = False 
+        else:
+            raise ValueError("未能获取字体文件内部名称。")
+
+    except Exception as e:
+        # 注册或设置失败的备用方案
+        plt.rcParams['font.sans-serif'] = ['sans-serif'] 
+        plt.rcParams['axes.unicode_minus'] = False 
+        st.error(f"❌ 字体加载失败（内部错误）：{e}")
+        
 else:
-    # 5. 备用配置 (以防万一字体路径在部署环境出错)
-    st.warning("⚠️ 警告：字体文件加载失败，中文显示可能异常。")
+    # 文件未找到的备用配置
+    st.warning("⚠️ 警告：字体文件 `.fonts/simsunb.ttf` 未在部署环境中找到。中文显示可能异常。")
     plt.rcParams['font.sans-serif'] = ['sans-serif'] 
     plt.rcParams['axes.unicode_minus'] = False 
-
-# --- 物理常数与爆炸参数 ---
-R_TANK = 5      # ...
-# ...
-# 后续代码保持不变
-
-
 
 # --- 物理常数与爆炸参数 ---
 R_TANK = 5      # 储罐半径 (m)
