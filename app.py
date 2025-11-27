@@ -5,75 +5,99 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import random 
 import os
+import platform
 import matplotlib.font_manager as fm
-import shutil # 用于删除缓存
+from matplotlib.font_manager import FontProperties  # 导入字体属性类
 
-# 注意：art3d 将在 draw_complex_3d_simulation_plot 函数内部被正确引用
+# ========== 第一步：先调用set_page_config（必须是第一个Streamlit命令） ==========
+st.set_page_config(
+    page_title="LNG仿真平台",
+    page_icon="⚛️",
+    layout="wide"
+)
 
-# --- 强制清理 Matplotlib 缓存 (部署环境必须!) ---
-# 此操作确保 Matplotlib 在每次启动时重新扫描字体，避免使用旧的字体列表。
-try:
-    cache_dir = fm.get_cachedir()
-    if os.path.exists(cache_dir):
-        shutil.rmtree(cache_dir)
-    # 重新加载字体管理器
-    fm._load_fontmanager(try_read_cache=False) 
-except Exception as e:
-    # 可以在本地调试时查看错误，但在部署时静默处理
-    pass
-# -----------------------------------
-
-
-# --- 中文显示配置 (使用 simsunb.ttf 文件修复) ---
-# 1. 定义字体文件路径 (确认使用 simsunb.ttf)
-FONT_PATH = os.path.join(os.path.dirname(__file__), '.fonts', 'simsunb.ttf') 
-CUSTOM_FONT_NAME = None 
-
-if os.path.exists(FONT_PATH):
+# --- 中文显示配置（本地+云端双适配，移除内部Streamlit命令）---
+def setup_chinese_font():
+    """
+    自动适配本地/云端环境的中文配置：
+    1. 本地优先使用系统自带中文字体（Windows: SimHei/Microsoft YaHei；Mac: PingFang SC；Linux: WenQuanYi Zen Hei）
+    2. 云端使用预装字体
+    返回：字体配置状态信息（用于后续显示）
+    """
+    status_msg = ""
     try:
-        # 2. 注册新字体
-        fm.fontManager.addfont(FONT_PATH) 
+        # ===== 第一步：检测系统类型，定位本地中文字体路径 =====
+        system = platform.system()
+        local_font_paths = []
         
-        # 3. 动态获取字体文件内部定义的正式族名
-        prop = fm.FontProperties(fname=FONT_PATH)
-        CUSTOM_FONT_NAME = prop.get_name() 
-
-        # 4. 设置 Matplotlib 参数，使用动态获取的字体名称
-        if CUSTOM_FONT_NAME:
-            # 强制使用自定义字体，并设置 sans-serif 别名
-            plt.rcParams['font.sans-serif'] = [CUSTOM_FONT_NAME, 'Arial Unicode MS', 'sans-serif'] 
-            plt.rcParams['font.family'] = 'sans-serif' 
-            plt.rcParams['axes.unicode_minus'] = False 
+        if system == "Windows":
+            # Windows默认字体路径（必存在）
+            font_dir = "C:/Windows/Fonts/"
+            # 优先尝试的中文字体文件（黑体/微软雅黑/宋体）
+            local_font_files = ["simhei.ttf", "msyh.ttc", "simsun.ttc"]
+            local_font_paths = [os.path.join(font_dir, f) for f in local_font_files if os.path.exists(os.path.join(font_dir, f))]
+            
+        elif system == "Darwin":  # MacOS
+            font_dir = "/System/Library/Fonts/"
+            local_font_files = ["PingFang.ttc", "Heiti.ttc"]
+            local_font_paths = [os.path.join(font_dir, f) for f in local_font_files if os.path.exists(os.path.join(font_dir, f))]
+            
+        elif system == "Linux":  # Linux/Streamlit云端
+            font_dir = "/usr/share/fonts/truetype/"
+            local_font_files = ["wqy-zenhei/wqy-zenhei.ttc"]
+            local_font_paths = [os.path.join(font_dir, f) for f in local_font_files if os.path.exists(os.path.join(font_dir, f))]
+        
+        # ===== 第二步：本地有字体则优先加载 =====
+        if local_font_paths:
+            # 注册本地字体
+            font_path = local_font_paths[0]  # 取第一个可用的中文字体
+            fm.fontManager.addfont(font_path)
+            # 获取字体名称
+            font_prop = fm.FontProperties(fname=font_path)
+            font_name = font_prop.get_name()
+            # 设置Matplotlib字体
+            plt.rcParams['font.sans-serif'] = [font_name, 'sans-serif']
+            #status_msg = f"✅ 本地字体加载成功：{font_name} (路径：{font_path})"
+        
+        # ===== 第三步：本地无字体则用云端适配逻辑 =====
         else:
-            raise ValueError("未能获取字体文件内部名称。")
-
-    except Exception as e:
-        # 注册或设置失败的备用方案
-        plt.rcParams['font.sans-serif'] = ['sans-serif'] 
-        plt.rcParams['axes.unicode_minus'] = False 
-        st.error(f"❌ 字体加载失败（内部错误）：{e}")
+            # 云端常见中文字体列表
+            chinese_fonts = [
+                'WenQuanYi Zen Hei', 'DejaVu Sans', 'SimHei', 'Arial Unicode MS',
+                'Microsoft YaHei', 'PingFang SC'
+            ]
+            available_fonts = set([f.name for f in fm.fontManager.ttflist])
+            for font in chinese_fonts:
+                if font in available_fonts:
+                    plt.rcParams['font.sans-serif'] = [font, 'sans-serif']
+                    status_msg = f"⚠️ 本地无中文字体，使用兼容字体：{font}"
+                    break
+            else:
+                plt.rcParams['font.sans-serif'] = ['sans-serif']
+                status_msg = "⚠️ 未找到可用中文字体，中文可能显示异常"
         
-else:
-    # 文件未找到的备用配置
-    st.warning("⚠️ 警告：字体文件 `.fonts/simsunb.ttf` 未在部署环境中找到。中文显示可能异常。")
-    plt.rcParams['font.sans-serif'] = ['sans-serif'] 
-    plt.rcParams['axes.unicode_minus'] = False 
+        # 关键：解决负号显示问题
+        plt.rcParams['axes.unicode_minus'] = False
+        plt.rcParams['font.size'] = 10  # 基础字体大小
+        
+    except Exception as e:
+        status_msg = f"❌ 字体配置失败：{str(e)}"
+        plt.rcParams['font.sans-serif'] = ['sans-serif']
+        plt.rcParams['axes.unicode_minus'] = False
+    
+    return status_msg  # 返回状态信息，后续再用st显示
+
+# 初始化中文配置（此时还未调用任何st命令，仅返回状态）
+font_status = setup_chinese_font()
 
 # --- 物理常数与爆炸参数 ---
 R_TANK = 5      # 储罐半径 (m)
 H_TANK = 20     # 储罐高度 (m)
 LEAK_RATE_KG_S = 0.8  # 泄漏流速 (kg/s)
 VCE_EFFICIENCY = 0.03 # VCE爆炸效率 (3%)
+COMBUSTIBLE_FRACTION = 0.25 # 可燃物质占总泄漏量的比例 (25%)
 COMBUSTION_HEAT_LNG = 50e6 # LNG燃烧热 (J/kg)
 EXPLOSION_HEAT_TNT = 4.5e6 # TNT爆炸热 (J/kg)
-COMBUSTIBLE_FRACTION = 0.25 # 可燃物质占总泄漏量的比例 (25%)
-
-# --- 页面配置 ---
-st.set_page_config(
-    page_title="LNG仿真平台",
-    page_icon="⚛️",
-    layout="wide"
-)
 
 # --- 样式调整 (CSS) ---
 st.markdown("""
@@ -85,7 +109,6 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- 核心逻辑函数：包含复杂建模过程 ---
-
 def calculate_complex_state(t):
     """根据时间 t (min) 计算当前的物理状态，并进行 TNT 模型计算"""
     t_sec = t * 60
@@ -151,19 +174,27 @@ def calculate_complex_state(t):
 
 # --- 复杂 3D 绘图函数 ---
 def draw_complex_3d_simulation_plot(t, state):
+    # 设置高DPI（适配本地/云端显示）
+    plt.rcParams['figure.dpi'] = 150
+    plt.rcParams['savefig.dpi'] = 150
+    
     fig = plt.figure(figsize=(12, 10))
     ax = fig.add_subplot(111, projection='3d')
     
-    # 【修复2】在函数内部从 mpl_toolkits.mplot3d 引入 art3d
+    # 从 mpl_toolkits.mplot3d 引入 art3d
     from mpl_toolkits.mplot3d import art3d 
     
     ax.set_xlim(-70, 70)
     ax.set_ylim(-70, 70)
     ax.set_zlim(0, 35) 
-    ax.set_xlabel('东-西方向 (m)')
-    ax.set_ylabel('南-北方向 (m)')
-    ax.set_zlabel('高度 (m)')
-    ax.tick_params(colors='#333333')
+    
+    # 轴标签设置（加粗、大号字体，确保中文显示）
+    ax.set_xlabel('东-西方向 (m)', fontsize=12, fontweight='bold')
+    ax.set_ylabel('南-北方向 (m)', fontsize=12, fontweight='bold')
+    ax.set_zlabel('高度 (m)', fontsize=12, fontweight='bold')
+    
+    # 刻度标签加粗
+    ax.tick_params(colors='#333333', labelsize=10, width=1.5)
 
     # --- 1. 绘制地面 ---
     x_ground = np.linspace(-70, 70, 2)
@@ -179,7 +210,7 @@ def draw_complex_3d_simulation_plot(t, state):
     x_tank = R_TANK * np.cos(theta_grid)
     y_tank = R_TANK * np.sin(theta_grid)
     ax.plot_surface(x_tank, y_tank, z_grid, color='#666666', alpha=0.8) 
-    ax.text(0, 0, H_TANK + 2, "T-101", color='black', ha='center', va='bottom', fontsize=10)
+    ax.text(0, 0, H_TANK + 2, "T-101", color='black', ha='center', va='bottom', fontsize=11, fontweight='bold')
 
     # --- 3. 绘制厂区其他元素：BOG 压缩机房 ---
     room_x, room_y, room_z_base = 20, -15, 0 
@@ -199,9 +230,8 @@ def draw_complex_3d_simulation_plot(t, state):
         [room_verts[2], room_verts[3], room_verts[7], room_verts[6]], 
         [room_verts[3], room_verts[0], room_verts[4], room_verts[7]]
     ]
-    # 【修复3】使用 art3d.Poly3DCollection (在函数内部引用 art3d)
     ax.add_collection3d(art3d.Poly3DCollection(room_faces, facecolor='#b0c4de', edgecolor='black', alpha=0.7, label='BOG压缩机房'))
-    ax.text(room_x + room_width/2, room_y + room_depth/2, room_z_base + room_height + 1, "BOG机房", color='black', ha='center', fontsize=8)
+    ax.text(room_x + room_width/2, room_y + room_depth/2, room_z_base + room_height + 1, "BOG机房", color='black', ha='center', fontsize=9, fontweight='bold')
 
     # 绘制管道 (简化)
     pipe_color = '#7f8c8d'
@@ -209,12 +239,10 @@ def draw_complex_3d_simulation_plot(t, state):
     ax.plot([-30, -30], [-70, 70], [2, 2], color=pipe_color, linewidth=3)
     ax.plot([30, 30], [-70, 70], [2, 2], color=pipe_color, linewidth=3)
 
-
     # --- 4. 动态场景分歧：爆炸前 vs 爆炸后 ---
-    
     if t < 10:
         # --- 泄漏扩散阶段 (3D 云团) ---
-        ax.set_title(f"泄漏扩散 3D 模拟 (T={t:.1f} min) | 云团高度: {state['H_cloud']:.1f} m", fontsize=16)
+        ax.set_title(f"泄漏扩散 3D 模拟 (T={t:.1f} min) | 云团高度: {state['H_cloud']:.1f} m", fontsize=16, fontweight='bold')
         
         if state['area'] > 1:
             radius_base = np.sqrt(state['area'] / np.pi) * 0.8
@@ -236,7 +264,7 @@ def draw_complex_3d_simulation_plot(t, state):
 
     else:
         # --- 爆炸阶段 (3D 伤害半球 & 火焰) ---
-        ax.set_title(f"爆炸后果 3D 模拟 (T={t:.1f} min)", fontsize=16, color='#dc3545') 
+        ax.set_title(f"爆炸后果 3D 模拟 (T={t:.1f} min)", fontsize=16, color='#dc3545', fontweight='bold') 
         
         center_exp = (5, -5, 0)
         
@@ -248,7 +276,7 @@ def draw_complex_3d_simulation_plot(t, state):
             z = radius * np.outer(np.ones(np.size(u)), np.cos(v)) + center_exp[2]
             ax.plot_wireframe(x, y, z, color=color, alpha=alpha, linewidth=1.0)
             ax.text(center_exp[0] + radius*0.8, center_exp[1] - radius*0.3, 15, 
-                    f"{label_text}: {radius:.1f}m", color=color, fontsize=8, horizontalalignment='center')
+                    f"{label_text}: {radius:.1f}m", color=color, fontsize=9, horizontalalignment='center', fontweight='bold')
         
         plot_blast_hemisphere(state['R_400kpa'], '#cc0000', 0.8, '0.4MPa')
         plot_blast_hemisphere(state['R_100kpa'], '#ff9900', 0.5, '0.1MPa')
@@ -265,11 +293,20 @@ def draw_complex_3d_simulation_plot(t, state):
 
         # BOG机房损坏提示
         ax.text(room_x + room_width/2, room_y + room_depth/2, room_z_base + room_height + 3, 
-                "BOG机房 (损毁)", color='darkred', ha='center', va='center', fontsize=10, fontweight='bold')
+                "BOG机房 (损毁)", color='darkred', ha='center', va='center', fontsize=11, fontweight='bold')
         
         ax.view_init(elev=20, azim=-60)
-        
-    ax.legend(loc='upper right', fontsize=8) 
+    
+    # 图例加粗（通过FontProperties）
+    legend_prop = FontProperties(size=10, weight='bold')
+    ax.legend(
+        loc='upper right', 
+        prop=legend_prop,
+        framealpha=0.9
+    ) 
+    
+    # 调整布局，避免标签被截断
+    plt.tight_layout()
     return fig
 
 # --- 动态分析面板函数 ---
@@ -304,6 +341,14 @@ def render_dynamic_analysis(t, state):
 
 # --- 主界面布局 ---
 def main():
+    # 显示字体配置状态（在set_page_config之后）
+    if "✅" in font_status:
+        st.success(font_status)
+    elif "⚠️" in font_status:
+        st.warning(font_status)
+    else:
+        st.error(font_status)
+    
     st.title("⚛️ LNG储罐泄漏事故 3D 复杂仿真平台")
     st.markdown("---")
     st.markdown("#### 基于物理模型：TNT当量法、重气扩散近似")
@@ -334,7 +379,6 @@ def main():
         kpi4.metric("⚠️ 泄漏危险等级", current_state['danger_level'], delta="快速处理", delta_color="inverse")
     else:
         kpi4.metric("✅ 泄漏危险等级", current_state['danger_level'])
-
 
     # --- 主要内容区 ---
     st.markdown("---")
