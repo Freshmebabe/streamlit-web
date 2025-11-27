@@ -63,7 +63,7 @@ def setup_chinese_font():
         else:
             # 云端常见中文字体列表
             chinese_fonts = [
-                'WenQuanYi Zen Hei', 'DejaVu Sans', 'SimHei', 'Arial Unicode MS',
+                'WenQuanYi Zen Hei', 'SimHei','DejaVu Sans', 'Arial Unicode MS',
                 'Microsoft YaHei', 'PingFang SC'
             ]
             available_fonts = set([f.name for f in fm.fontManager.ttflist])
@@ -189,9 +189,9 @@ def draw_complex_3d_simulation_plot(t, state):
     ax.set_zlim(0, 35) 
     
     # 轴标签设置（加粗、大号字体，确保中文显示）
-    ax.set_xlabel('东-西方向 (m)', fontsize=12, fontweight='bold')
-    ax.set_ylabel('南-北方向 (m)', fontsize=12, fontweight='bold')
-    ax.set_zlabel('高度 (m)', fontsize=12, fontweight='bold')
+    ax.set_xlabel('East-west direction (m)', fontsize=12, fontweight='bold')
+    ax.set_ylabel('North-south direction (m)', fontsize=12, fontweight='bold')
+    ax.set_zlabel('height (m)', fontsize=12, fontweight='bold')
     
     # 刻度标签加粗
     ax.tick_params(colors='#333333', labelsize=10, width=1.5)
@@ -230,12 +230,12 @@ def draw_complex_3d_simulation_plot(t, state):
         [room_verts[2], room_verts[3], room_verts[7], room_verts[6]], 
         [room_verts[3], room_verts[0], room_verts[4], room_verts[7]]
     ]
-    ax.add_collection3d(art3d.Poly3DCollection(room_faces, facecolor='#b0c4de', edgecolor='black', alpha=0.7, label='BOG压缩机房'))
-    ax.text(room_x + room_width/2, room_y + room_depth/2, room_z_base + room_height + 1, "BOG机房", color='black', ha='center', fontsize=9, fontweight='bold')
+    ax.add_collection3d(art3d.Poly3DCollection(room_faces, facecolor='#b0c4de', edgecolor='black', alpha=0.7, label='BOG Compressor room'))
+    ax.text(room_x + room_width/2, room_y + room_depth/2, room_z_base + room_height + 1, "BOG room", color='black', ha='center', fontsize=9, fontweight='bold')
 
     # 绘制管道 (简化)
     pipe_color = '#7f8c8d'
-    ax.plot([R_TANK*np.cos(np.pi/4), room_x+room_width/2], [R_TANK*np.sin(np.pi/4), room_y+room_depth/2], [1, 1], color=pipe_color, linewidth=3, label='管道')
+    ax.plot([R_TANK*np.cos(np.pi/4), room_x+room_width/2], [R_TANK*np.sin(np.pi/4), room_y+room_depth/2], [1, 1], color=pipe_color, linewidth=3, label='Pipeline')
     ax.plot([-30, -30], [-70, 70], [2, 2], color=pipe_color, linewidth=3)
     ax.plot([30, 30], [-70, 70], [2, 2], color=pipe_color, linewidth=3)
 
