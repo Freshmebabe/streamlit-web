@@ -242,7 +242,7 @@ def draw_complex_3d_simulation_plot(t, state):
     # --- 4. 动态场景分歧：爆炸前 vs 爆炸后 ---
     if t < 10:
         # --- 泄漏扩散阶段 (3D 云团) ---
-        ax.set_title(f"泄漏扩散 3D 模拟 (T={t:.1f} min) | 云团高度: {state['H_cloud']:.1f} m", fontsize=16, fontweight='bold')
+        ax.set_title(f"3D simulation of leakage and diffusion (T={t:.1f} min) | Cloud mass height: {state['H_cloud']:.1f} m", fontsize=16, fontweight='bold')
         
         if state['area'] > 1:
             radius_base = np.sqrt(state['area'] / np.pi) * 0.8
