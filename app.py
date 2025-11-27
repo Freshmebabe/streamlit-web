@@ -16,79 +16,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- 中文显示配置（本地+云端双适配，移除内部Streamlit命令）---
-def setup_chinese_font():
-    """
-    自动适配本地/云端环境的中文配置：
-    1. 本地优先使用系统自带中文字体（Windows: SimHei/Microsoft YaHei；Mac: PingFang SC；Linux: WenQuanYi Zen Hei）
-    2. 云端使用预装字体
-    返回：字体配置状态信息（用于后续显示）
-    """
-    status_msg = ""
-    try:
-        # ===== 第一步：检测系统类型，定位本地中文字体路径 =====
-        system = platform.system()
-        local_font_paths = []
-        
-        if system == "Windows":
-            # Windows默认字体路径（必存在）
-            font_dir = "C:/Windows/Fonts/"
-            # 优先尝试的中文字体文件（黑体/微软雅黑/宋体）
-            local_font_files = ["simhei.ttf", "msyh.ttc", "simsun.ttc"]
-            local_font_paths = [os.path.join(font_dir, f) for f in local_font_files if os.path.exists(os.path.join(font_dir, f))]
-            
-        elif system == "Darwin":  # MacOS
-            font_dir = "/System/Library/Fonts/"
-            local_font_files = ["PingFang.ttc", "Heiti.ttc"]
-            local_font_paths = [os.path.join(font_dir, f) for f in local_font_files if os.path.exists(os.path.join(font_dir, f))]
-            
-        elif system == "Linux":  # Linux/Streamlit云端
-            font_dir = "/usr/share/fonts/truetype/"
-            local_font_files = ["wqy-zenhei/wqy-zenhei.ttc"]
-            local_font_paths = [os.path.join(font_dir, f) for f in local_font_files if os.path.exists(os.path.join(font_dir, f))]
-        
-        # ===== 第二步：本地有字体则优先加载 =====
-        if local_font_paths:
-            # 注册本地字体
-            font_path = local_font_paths[0]  # 取第一个可用的中文字体
-            fm.fontManager.addfont(font_path)
-            # 获取字体名称
-            font_prop = fm.FontProperties(fname=font_path)
-            font_name = font_prop.get_name()
-            # 设置Matplotlib字体
-            plt.rcParams['font.sans-serif'] = [font_name, 'sans-serif']
-            #status_msg = f"✅ 本地字体加载成功：{font_name} (路径：{font_path})"
-        
-        # ===== 第三步：本地无字体则用云端适配逻辑 =====
-        else:
-            # 云端常见中文字体列表
-            chinese_fonts = [
-                'WenQuanYi Zen Hei', 'SimHei','DejaVu Sans', 'Arial Unicode MS',
-                'Microsoft YaHei', 'PingFang SC'
-            ]
-            available_fonts = set([f.name for f in fm.fontManager.ttflist])
-            for font in chinese_fonts:
-                if font in available_fonts:
-                    plt.rcParams['font.sans-serif'] = [font, 'sans-serif']
-                    status_msg = f"⚠️ 本地无中文字体，使用兼容字体：{font}"
-                    break
-            else:
-                plt.rcParams['font.sans-serif'] = ['sans-serif']
-                status_msg = "⚠️ 未找到可用中文字体，中文可能显示异常"
-        
-        # 关键：解决负号显示问题
-        plt.rcParams['axes.unicode_minus'] = False
-        plt.rcParams['font.size'] = 10  # 基础字体大小
-        
-    except Exception as e:
-        status_msg = f"❌ 字体配置失败：{str(e)}"
-        plt.rcParams['font.sans-serif'] = ['sans-serif']
-        plt.rcParams['axes.unicode_minus'] = False
-    
-    return status_msg  # 返回状态信息，后续再用st显示
 
-# 初始化中文配置（此时还未调用任何st命令，仅返回状态）
-font_status = setup_chinese_font()
 
 # --- 物理常数与爆炸参数 ---
 R_TANK = 5      # 储罐半径 (m)
