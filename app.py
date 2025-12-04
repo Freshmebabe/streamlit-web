@@ -264,7 +264,7 @@ def draw_complex_3d_simulation_plot(t, state):
 
     else:
         # --- 爆炸阶段 (3D 伤害半球 & 火焰) ---
-        ax.set_title(f"爆炸后果 3D 模拟 (T={t:.1f} min)", fontsize=16, color='#dc3545', fontweight='bold') 
+        ax.set_title(f"3D simulation of explosion consequences  (T={t:.1f} min)", fontsize=16, color='#dc3545', fontweight='bold') 
         
         center_exp = (5, -5, 0)
         
