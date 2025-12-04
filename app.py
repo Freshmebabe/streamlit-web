@@ -259,8 +259,8 @@ def draw_complex_3d_simulation_plot(t, state):
             ys_hot = np.random.normal(-5, 3, num_points//5)
             zs_hot = np.random.uniform(0.1, 2, num_points//5)
             
-            ax.scatter(xs_diff, ys_diff, zs_diff, c='cyan', alpha=0.3, s=10, label='低浓度蒸汽云')
-            ax.scatter(xs_hot, ys_hot, zs_hot, c='#ff7f0e', alpha=0.6, s=20, label='高浓度积聚区')
+            ax.scatter(xs_diff, ys_diff, zs_diff, c='cyan', alpha=0.3, s=10, label='low-concentration vapor cloud')
+            ax.scatter(xs_hot, ys_hot, zs_hot, c='#ff7f0e', alpha=0.6, s=20, label='high-concentration accumulation area')
 
     else:
         # --- 爆炸阶段 (3D 伤害半球 & 火焰) ---
